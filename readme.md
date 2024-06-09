@@ -39,6 +39,7 @@ return (
 )
 
 ```
+> NB: The notification node wrapper should have a className of `notification`, react-notification internally query the node wrapper using `notification` class selector.
 
 ## Options
 
@@ -54,7 +55,7 @@ Custom function to format notification message
 
 ### timeout
 
-type: `number`
+type: `number`<br>
 default: `2500`
 
 Time in milliseconds a notification will be displyed before disappearing.
@@ -69,7 +70,7 @@ Raw unformatted notification message.
 
 ### root
 
-type: `string`
+type: `string`<br>
 default: `notification`
 
 Node class selector, where notification content will be populated.
