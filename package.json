@@ -12,6 +12,7 @@
   "type": "module",
   "description": "Utility to simplify react notifications",
   "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "exports": {
     "default": "./src/index.js"
   },
@@ -19,12 +20,15 @@
     "./src/index.js"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
   },
   "keywords": [
     "react",
     "notification"
   ],
   "author": "ambiere",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
 }
