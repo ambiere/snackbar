@@ -1,6 +1,6 @@
 # react-notification [![CI](https://github.com/ambiere/react-notification/actions/workflows/main.yml/badge.svg)](https://github.com/ambiere/react-notification/actions/workflows/main.yml)
 
->Simple utility to simplify react notifications. Applies animation properties to your notification components
+>Simple utility to simplify react notifications. <br>Applies animation properties to your notification components
 
 ## Install
 
@@ -42,7 +42,7 @@ return (
 
 ## Options
 
-`formatter`
+### formatter
 
 type: `function`
 
@@ -51,44 +51,40 @@ Custom function to format notification message
 - Param: `message` - Raw unformatted text, internally supplied as the first argument of the formatter function.
 - Returns: `message` - Formatted text.
 
-...
 
-`timeout`
+### timeout
 
 type: `number`
 default: `2500`
 
 Time in milliseconds a notification will be displyed before disappearing.
 
-...
 
-`message`
+### message
 
 type: `string`
 
 Raw unformatted notification message.
 
-...
 
-`root`
+### root
 
 type: `string`
 default: `notification`
 
 Node class selector, where notification content will be populated.
 
-...
 
-`animation`
+### animation
 
 type: `string`
 
 CSS class selector containing animation properties to be applied on notification node wrapper.
 
 
-## Methods
+## API
 
-`notify(cb?)`
+### notify(cb?)
 
 type: `function`
 
@@ -96,9 +92,8 @@ Function that applies animation properties to the notification node wrapper. Acc
 
 - Param: `cb` - Optional callback function
 
-...
 
-`populateRoot()`
+### populateRoot()
 
 type: `function`
 
@@ -108,5 +103,5 @@ Function that populate notification message in notification node specified by no
 
 ## License
 
-MIT License
+[MIT License](https://github.com/ambiere/react-notification/blob/main/license)
 
