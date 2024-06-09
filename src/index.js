@@ -1,9 +1,9 @@
 class ReactNotification {
-  constructor({
+  constructor ({
     message,
     timeout = 2500,
-    root = "notification",
-    animation = "animation",
+    root = 'notification',
+    animation = 'animation',
     formatter = (message) => message
   }) {
     this.root = root
@@ -11,33 +11,33 @@ class ReactNotification {
     this.timeout = timeout
     this.animation = animation
     this.formatter = formatter
-    this.rootWrapper = document.querySelector(`.notification`)
+    this.rootWrapper = document.querySelector('.notification')
   }
 
-  populateRoot() {
+  populateRoot () {
     let root = this.rootWrapper
-    if (this.root != "notification") {
+    if (this.root !== 'notification') {
       root = document.querySelector(`.${this.root}`)
     }
     root.innerHTML = this.formatter(this.message)
     return {
       depopulate: () => {
-        root.innerHTML = ""
+        root.innerHTML = ''
       }
     }
   }
 
-  notify(cb = () => { }) {
+  notify (cb = () => { }) {
     const root = this.populateRoot()
     this.rootWrapper.classList.add(this.animation)
     return new Promise((resolve, reject) =>
       setTimeout(() => {
         this.rootWrapper.classList.remove(this.animation)
         root.depopulate()
-        if (typeof cb === "function") {
+        if (typeof cb === 'function') {
           resolve(cb())
         } else {
-          reject("Error: Callback should be a function")
+          reject(new Error('Error: Callback should be a function'))
         }
       }, this.timeout))
   }
