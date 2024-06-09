@@ -1,4 +1,4 @@
-# react-notification
+# react-notification [![CI](https://github.com/ambiere/react-notification/actions/workflows/main.yml/badge.svg)](https://github.com/ambiere/react-notification/actions/workflows/main.yml)
 
 >Utility to simplify react notification. Apply animation properties to your notification component
 
