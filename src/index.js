@@ -1,36 +1,46 @@
-class Notification {
+class ReactNotification {
   constructor({
     message,
     timeout = 2500,
-    preNotification,
-    postNotification,
     root = "notification",
-    animation = "animation"
+    animation = "animation",
+    formatter = (message) => message
   }) {
+    this.root = root
     this.message = message
     this.timeout = timeout
-    this.preNotification = preNotification
-    this.postNotification = postNotification
-    this.root = document.querySelector(`.${root}`)
     this.animation = animation
+    this.formatter = formatter
+    this.rootWrapper = document.querySelector(`.notification`)
   }
 
-  format(formatCb) {
-    if (formatCb) {
-      return formatCb(this.message)
+  populateRoot() {
+    let root = this.rootWrapper
+    if (this.root != "notification") {
+      root = document.querySelector(`.${this.root}`)
     }
-    return this.message.split(":")[1]
+    root.innerHTML = this.formatter(this.message)
+    return {
+      depopulate: () => {
+        root.innerHTML = ""
+      }
+    }
   }
 
   notify(cb = () => { }) {
-    this.preNotification(this.root, this.format)
-    this.root.classList.add(this.animation)
-    setTimeout(() => {
-      this.postNotification(this.root)
-      this.root.classList.remove(this.animation)
-      return cb
-    }, this.timeout)
+    const root = this.populateRoot()
+    this.rootWrapper.classList.add(this.animation)
+    return new Promise((resolve, reject) =>
+      setTimeout(() => {
+        this.rootWrapper.classList.remove(this.animation)
+        root.depopulate()
+        if (typeof cb === "function") {
+          resolve(cb())
+        } else {
+          reject("Error: Callback should be a function")
+        }
+      }, this.timeout))
   }
 }
 
-export default Notification
+export default ReactNotification
