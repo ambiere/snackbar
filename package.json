@@ -17,10 +17,11 @@
     "default": "./src/index.js"
   },
   "files": [
-    "./src/index.js"
+    "./src/index.js",
+    "./src/index.d.ts"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "standard --fix && vitest"
   },
   "keywords": [
     "react",
@@ -29,6 +30,7 @@
   "author": "ambiere",
   "license": "MIT",
   "devDependencies": {
+    "standard": "^17.1.0",
     "vitest": "^1.6.0"
   }
 }
