@@ -1,6 +1,6 @@
 # react-notification [![CI](https://github.com/ambiere/react-notification/actions/workflows/main.yml/badge.svg)](https://github.com/ambiere/react-notification/actions/workflows/main.yml)
 
->Utility to simplify react notification. Apply animation properties to your notification component
+>Simple utility to simplify react notifications. Applies animation properties to your notification components
 
 ## Install
 
@@ -11,66 +11,100 @@ npm install @ambiere/react-notification
 ## Usage
 
 ```jsx
-import { seEffect  from "react"
-import Notification from "react-notification"
+import ReactNotification from "react-notification"
 
-function SignUp() {
-const [errorText, setErrorText] = useState()
-const [signUp, {data,error} ] = useMutation(SIGN_UP)
+useEffect(()=>{
+  //.....
+  const notification = new ReactNotification({
+    message: "Notification message",
+    timeout: 2500,
+    root: "root",
+    animation: "animation",
+    formatter(message) {
+      return message.concat(" :)")
+    }
+  })
 
-useEffect(()=> {
-  if(error) {
-    const notification = new Notification({
-        timeout: 2500,
-        message: error.message,
-        root: "notificationWrapper"
-        animation: "animateNotification",
-        preNotification: (root, format) => setErrorText(format()),
-        postNotification: (root) => setErrorText(""),
-    })
-
-    notification.notify(()=> navigate("/signup"))
-  }
-}, [error])
+  notification.notify(()=>navigate("/home"))
+  //....
+})
 
 
 return (
-<div>
-  // ...
-  <div className="notificationWrapper">{text}</div>
-</div>
+  //....
+  <div className="notification">
+    //....
+    <p className="root"></p>
+  </div>
 )
-```
 
+```
 
 ## Options
 
+`formatter`
+
+type: `function`
+
+Custom function to format notification message
+
+- Param: `message` - Raw unformatted text, internally supplied as the first argument of the formatter function.
+- Returns: `message` - Formatted text.
+
+...
+
 `timeout`
 
-Time in milliseconds, that notification will be displayed before disappering.
+type: `number`
+default: `2500`
+
+Time in milliseconds a notification will be displyed before disappearing.
+
+...
 
 `message`
 
-Raw message from your queries results or custom hardcoded message to be displayed upon notification
+type: `string`
+
+Raw unformatted notification message.
+
+...
 
 `root`
 
-Class selector of a DOM element where notification context will be placed
+type: `string`
+default: `notification`
+
+Node class selector, where notification content will be populated.
+
+...
 
 `animation`
 
-CSS class that contains defined animation properties to be applied on `root`
+type: `string`
 
-`preNotification`
+CSS class selector containing animation properties to be applied on notification node wrapper.
 
-Callback function that is executed prior notification. The callback is supplied with `root`, DOM element and
-a callback function that format the `message`. Useful to update the notification message state before notification.
 
-`postNotification`
+## Methods
 
-Callback function that is executed after notification. The callback is supplied with `root`, DOM element. Useful to clear
-notification message state after notification.
+`notify(cb?)`
 
+type: `function`
+
+Function that applies animation properties to the notification node wrapper. Accept a callback function that will be executed after animation is completed
+
+- Param: `cb` - Optional callback function
+
+...
+
+`populateRoot()`
+
+type: `function`
+
+Function that populate notification message in notification node specified by node class selector, `root`.
+
+- Returns: `depopulate()` - Function that depopulate notification message from notification node specified by node class selector, `root`.
 
 ## License
 
