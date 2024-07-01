@@ -2,7 +2,7 @@ import "./index.css"
 import React from "react"
 import ReactDOM from "react-dom/client"
 
-class ToastIt {
+class Snackbar {
   constructor({
     message,
     decorators,
@@ -12,7 +12,7 @@ class ToastIt {
     toastStyles,
     animationSelector,
     action,
-    ToastItComponent,
+    SnackbarComponent,
     hooks,
     position
   }) {
@@ -24,7 +24,7 @@ class ToastIt {
     this.toastStyles = toastStyles
     this.animationSelector = animationSelector
     this.action = action
-    this.ToastComponent = ToastItComponent
+    this.ToastComponent = SnackbarComponent
     this.hooks = hooks
     this.position = position
   }
@@ -33,6 +33,12 @@ class ToastIt {
     const docHeight = document.documentElement.scrollHeight
     const top = (docHeight - this.container.offsetHeight) / 2
     this.container.style.top = `${top}px`
+  }
+
+  #positionHorizontllyCenter() {
+    const docWidth = document.documentElement.scrollWidth
+    const left = (docWidth - this.container.offsetWidth) / 2
+    this.container.style.left = `${left}px`
   }
 
   #positionToast() {
@@ -52,6 +58,14 @@ class ToastIt {
       case "vertical-center-left":
         this.container.style.left = "0px"
         this.#positionVerticallyCenter()
+        break
+      case "horizontal-center-top":
+        this.container.style.top = "0px"
+        this.#positionHorizontllyCenter()
+        break
+      case "horizontal-center-bottom":
+        this.container.style.bottom = "0px"
+        this.#positionHorizontllyCenter()
         break
       case "bottom-right":
         this.container.style.right = "0px"
@@ -75,7 +89,7 @@ class ToastIt {
     const root = document.getElementById("toast-it-root")
 
     if (!root) {
-      ReactDOM.createRoot(container).render(this.#ToastItComponent())
+      ReactDOM.createRoot(container).render(this.#SnackbarComponent())
       //To avoid race condition during .querySelector
       //wait 0.1s before returning container and its children
       return new Promise(resolve => {
@@ -94,7 +108,7 @@ class ToastIt {
     return this.message
   }
 
-  #ToastItComponent() {
+  #SnackbarComponent() {
     if (this.ToastComponent) return this.ToastComponent
     return (
       <div className={`:toast ${this.toastStyles}`} >
@@ -159,7 +173,7 @@ class ToastIt {
   updateToast({ message, decorators, timeout, formatter, selector }) { }
 }
 
-export default ToastIt
+export default Snackbar
 
 
 
