@@ -1,0 +1,6 @@
+#snack-root {
+  position: fixed;
+  width: fit-content;
+  white-space: pre;
+  background: transparent;
+}
