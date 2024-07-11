@@ -12,6 +12,8 @@ export default class Snackbar {
   #animationEnded
   #animationStarted
   #timeoutCopy
+  #isOnSnackbarControl
+  #snackbarControl
 
   constructor({
     message,
@@ -33,11 +35,20 @@ export default class Snackbar {
     this.formatter = formatter
     this.initialStyles = initialStyles
     this.animationStyles = animationStyles
-    this.action = action
+    this.action = Object.assign({}, this.#action(), action)
     this.ToastComponent = SnackbarComponent
     this.hooks = hooks
     this.position = position
-    this.#timeoutCopy = structuredClone(timeout)
+    this.#timeoutCopy = structuredClone(timeout) // store original timeout
+  }
+
+  #action() {
+    return {
+      close: () => {
+        this.#animationEnded = true
+        this.#closeSnack()
+      }
+    }
   }
 
   #positionSnack() {
@@ -83,6 +94,7 @@ export default class Snackbar {
         endDecorator={this.decorators.endDecorator ?? <></>}
         closeDecorator={this.decorators.closeDecorator ?? "x"}
         message={this.#fmtMessage() ?? ""}
+        action={this.action}
       />
     )
   }
@@ -90,7 +102,7 @@ export default class Snackbar {
   #unmountSnackbar() {
     if (this.#animationEnded) {
       setTimeout(() => {
-        this.#reactRoot.unmount()
+        this.#reactRoot && this.#reactRoot.unmount()
         this.#reactRoot = null
         document.body.removeChild(this.root)
       }, 250)
@@ -130,7 +142,8 @@ export default class Snackbar {
     startDecorator,
     endDecorator,
     closeDecorator,
-    message
+    message,
+    action
   }) {
     return (
       <div className={`snackbar ${initialStyles}`}>
@@ -147,11 +160,10 @@ export default class Snackbar {
           <span className="esc">esc</span>
           <button
             className="snackbar-close-btn"
-            onClick={() => this.action.close(e)}>
+            onClick={(e) => action.close(e)}>
             {closeDecorator}
           </button>
         </div>
-
       </div>
     )
   }
@@ -178,7 +190,7 @@ export default class Snackbar {
         this.#scheduleCloseId = this.#scheduleClose()
         //We track the time elapsed before our snack close
         this.#scheduleCloseTimer = performance.now()
-        requestAnimationFrame(() => this.#trackTime())
+        this.#animationFrameRef = requestAnimationFrame(() => this.#trackTime())
       } else { }
     }
   }
@@ -207,7 +219,7 @@ export default class Snackbar {
   }
 
   #eventListeners = {
-    resizeEvent: () => this.#positionSnack(),
+    resize: () => this.#positionSnack(),
     snackClose: () => {
       this.#animationEnded = true
       this.#onSnackClose()
@@ -227,29 +239,32 @@ export default class Snackbar {
         "New states is preserved and will be applied on next render"
       )
     },
-    mouseEnterEvent: (e) => {
-      const isSnackRoot = e.target.closest("#snack-root")
-      isSnackRoot && this.#pauseSnack()
+    mouseMove: (e) => {
+      this.#pauseSnack()
+      this.#isOnSnackbarControl = e.target.closest(".snackbar-control")
     },
-    mouseOutEvent: (e) => {
+    mouseOut: (e) => {
       const isSnackRoot = e.target.closest("#snack-root")
-      isSnackRoot && this.#resumeSnack()
+      isSnackRoot && !this.#isOnSnackbarControl && this.#resumeSnack()
     }
   }
 
   #hydrateSnackbar() {
-    window.addEventListener("resize", this.#eventListeners.resizeEvent)
-    this.root.addEventListener("mouseenter", this.#eventListeners.mouseEnterEvent)
-    this.root.addEventListener("mouseout", this.#eventListeners.mouseOutEvent)
+    this.#snackbarControl = this.root.querySelector(".snackbar-control")
+    window.addEventListener("resize", this.#eventListeners.resize)
+    this.root.addEventListener("mousemove", this.#eventListeners.mouseMove)
+    this.#snackbarControl.addEventListener("mousemove", this.#eventListeners.mouseMove)
+    this.root.addEventListener("mouseout", this.#eventListeners.mouseOut)
     this.container.addEventListener("snackclose", this.#eventListeners.snackClose)
     this.container.addEventListener("snackopen", this.#eventListeners.snackOpen)
     this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
   }
 
   #dehydrateSnackbar() {
-    window.removeEventListener("resize", this.#eventListeners.resizeEvent)
-    this.root.removeEventListener("mouseenter", this.#eventListeners.mouseEnterEvent)
-    this.root.removeEventListener("mouseout", this.#eventListeners.mouseOutEvent)
+    window.removeEventListener("resize", this.#eventListeners.resize)
+    this.root.removeEventListener("mousemove", this.#eventListeners.mouseMove)
+    this.#snackbarControl.removeEventListener("mousemove", this.#eventListeners.mouseMove)
+    this.root.removeEventListener("mouseout", this.#eventListeners.mouseOut)
     this.container.removeEventListener("snackclose", this.#eventListeners.snackClose)
     this.container.removeEventListener("snackopen", this.#eventListeners.snackOpen)
     this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
