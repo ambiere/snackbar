@@ -47,6 +47,12 @@ export default class Snackbar {
       close: () => {
         this.#animationEnded = true
         this.#closeSnack()
+      },
+      escape: (e) => {
+        if (e.key === "Escape" && this.#animationStarted) {
+          this.#animationEnded = true
+          this.#closeSnack()
+        }
       }
     }
   }
@@ -104,7 +110,8 @@ export default class Snackbar {
       setTimeout(() => {
         this.#reactRoot && this.#reactRoot.unmount()
         this.#reactRoot = null
-        document.body.removeChild(this.root)
+        this.root && document.body.removeChild(this.root)
+        this.root = null
       }, 250)
     }
   }
@@ -250,24 +257,40 @@ export default class Snackbar {
   }
 
   #hydrateSnackbar() {
-    this.#snackbarControl = this.root.querySelector(".snackbar-control")
-    window.addEventListener("resize", this.#eventListeners.resize)
-    this.root.addEventListener("mousemove", this.#eventListeners.mouseMove)
-    this.#snackbarControl.addEventListener("mousemove", this.#eventListeners.mouseMove)
-    this.root.addEventListener("mouseout", this.#eventListeners.mouseOut)
-    this.container.addEventListener("snackclose", this.#eventListeners.snackClose)
-    this.container.addEventListener("snackopen", this.#eventListeners.snackOpen)
-    this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
+    console.debug("[hydration]: hydrating snackbar...")
+    try {
+      this.#snackbarControl = this.root.querySelector(".snackbar-control")
+      window.addEventListener("resize", this.#eventListeners.resize)
+      this.root.addEventListener("mousemove", this.#eventListeners.mouseMove)
+      this.#snackbarControl.addEventListener("mousemove", this.#eventListeners.mouseMove)
+      this.root.addEventListener("mouseout", this.#eventListeners.mouseOut)
+      this.container.addEventListener("snackclose", this.#eventListeners.snackClose)
+      this.container.addEventListener("snackopen", this.#eventListeners.snackOpen)
+      this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
+      window.addEventListener("keydown", this.action.escape)
+
+      console.debug("[hydration]: successfully hydrated snackbar")
+    } catch (error) {
+      console.error(error.message)
+    }
   }
 
   #dehydrateSnackbar() {
-    window.removeEventListener("resize", this.#eventListeners.resize)
-    this.root.removeEventListener("mousemove", this.#eventListeners.mouseMove)
-    this.#snackbarControl.removeEventListener("mousemove", this.#eventListeners.mouseMove)
-    this.root.removeEventListener("mouseout", this.#eventListeners.mouseOut)
-    this.container.removeEventListener("snackclose", this.#eventListeners.snackClose)
-    this.container.removeEventListener("snackopen", this.#eventListeners.snackOpen)
-    this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
+    console.debug("[dehydration]: dehydrating snackbar...")
+    try {
+      window.removeEventListener("resize", this.#eventListeners.resize)
+      this.root.removeEventListener("mousemove", this.#eventListeners.mouseMove)
+      this.#snackbarControl.removeEventListener("mousemove", this.#eventListeners.mouseMove)
+      this.root.removeEventListener("mouseout", this.#eventListeners.mouseOut)
+      this.container.removeEventListener("snackclose", this.#eventListeners.snackClose)
+      this.container.removeEventListener("snackopen", this.#eventListeners.snackOpen)
+      this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
+      this.container.removeEventListener("keydown", this.action.escape)
+
+      console.debug("[dehydration]: successfully dehydrated snackbar")
+    } catch (error) {
+      console.error(error.message)
+    }
   }
 
   #closeSnack() {
