@@ -4,3 +4,70 @@
   white-space: pre;
   background: transparent;
 }
+
+.snackbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  /* padding: .5rem; */
+  border-radius: .8rem;
+}
+
+.snackbar-content {
+  position: relative;
+  color: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.2rem;
+}
+
+.snackbar-control {
+  display: flex;
+  gap: .8rem;
+  justify-content: center;
+  align-items: center;
+  border-inline-start: 1px solid #303030;
+  padding-left: 1.8rem;
+}
+
+.esc {
+  color: #696c6d;
+  font-size: .8rem;
+  padding: 1px 4px;
+  margin: 0;
+  background: #393c3e59;
+  border: .1px solid #696c6d85;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: default;
+}
+
+.snackbar-close-btn {
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  width: fit-content;
+  padding: 0;
+  border: none;
+  color: #696c6d;
+  margin-top: 3px;
+  margin-right: .8rem;
+}
+
+.snackbar-close-btn:hover {
+  color: inherit;
+}
+
+.snackbar-endDecorator:not(:empty) {
+  margin-top: 3px;
+  margin-right: .8rem;
+}
+
+.snackbar-startDecorator {
+  margin-top: 3px;
+  margin-left: .8rem;
+}
