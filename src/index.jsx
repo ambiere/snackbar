@@ -19,11 +19,11 @@ export default class Snackbar {
     timeout = 3000,
     autoClose,
     formatter,
-    snackStyles,
-    animationSelector,
+    initialStyles,
+    animationStyles,
     action,
     SnackbarComponent,
-    hooks,
+    hooks = {},
     position
   }) {
     this.message = message
@@ -31,8 +31,8 @@ export default class Snackbar {
     this.timeout = timeout
     this.autoClose = autoClose
     this.formatter = formatter
-    this.snackStyles = snackStyles
-    this.animationSelector = animationSelector
+    this.initialStyles = initialStyles
+    this.animationStyles = animationStyles
     this.action = action
     this.ToastComponent = SnackbarComponent
     this.hooks = hooks
@@ -78,9 +78,10 @@ export default class Snackbar {
     const SnackbarComponent = this.#SnackbarComponent
     this.#reactRoot.render(
       <SnackbarComponent
-        snackStyles={this.snackStyles ?? ""}
+        initialStyles={this.initialStyles ?? ""}
         startDecorator={this.decorators.startDecorator ?? <></>}
         endDecorator={this.decorators.endDecorator ?? <></>}
+        closeDecorator={this.decorators.closeDecorator ?? "x"}
         message={this.#fmtMessage() ?? ""}
       />
     )
@@ -125,20 +126,32 @@ export default class Snackbar {
   }
 
   #SnackbarComponent({
-    snackStyles,
+    initialStyles,
     startDecorator,
     endDecorator,
+    closeDecorator,
     message
   }) {
     return (
-      <div className={`:snack ${snackStyles}`}>
-        <div className="snack-startDecorator">
-          {startDecorator}
+      <div className={`snackbar ${initialStyles}`}>
+        <div className="snackbar-content">
+          <div className="snackbar-startDecorator">
+            {startDecorator}
+          </div>
+          <div><p>{message}</p></div>
+          <div className="snackbar-endDecorator">
+            {endDecorator}
+          </div>
         </div>
-        <div><p>{message}</p></div>
-        <div className="snack-endDecorator">
-          {endDecorator}
+        <div className="snackbar-control">
+          <span className="esc">esc</span>
+          <button
+            className="snackbar-close-btn"
+            onClick={() => this.action.close(e)}>
+            {closeDecorator}
+          </button>
         </div>
+
       </div>
     )
   }
@@ -157,7 +170,7 @@ export default class Snackbar {
       this.#hydrateSnackbar()
       document.body.appendChild(this.root)
       this.#positionSnack()
-      this.container.classList.add(this.animationSelector)
+      this.container.classList.add(this.animationStyles)
 
       this.#emitEvent("snackopen")
 
@@ -203,6 +216,17 @@ export default class Snackbar {
       this.#animationStarted = true
       this.#onSnackOpen()
     },
+    snackUpdate: () => {
+      // update snackbar root if root is mounted
+      if (this.#reactRoot) {
+        return this.#renderSnackbar()
+      }
+      console.warn(
+        "Snackbar root was unmounted on close. " +
+        "Cannot update an unmounted root. " +
+        "New states is preserved and will be applied on next render"
+      )
+    },
     mouseEnterEvent: (e) => {
       const isSnackRoot = e.target.closest("#snack-root")
       isSnackRoot && this.#pauseSnack()
@@ -219,6 +243,7 @@ export default class Snackbar {
     this.root.addEventListener("mouseout", this.#eventListeners.mouseOutEvent)
     this.container.addEventListener("snackclose", this.#eventListeners.snackClose)
     this.container.addEventListener("snackopen", this.#eventListeners.snackOpen)
+    this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
   }
 
   #dehydrateSnackbar() {
@@ -227,10 +252,11 @@ export default class Snackbar {
     this.root.removeEventListener("mouseout", this.#eventListeners.mouseOutEvent)
     this.container.removeEventListener("snackclose", this.#eventListeners.snackClose)
     this.container.removeEventListener("snackopen", this.#eventListeners.snackOpen)
+    this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
   }
 
   #closeSnack() {
-    this.container.classList.remove(this.animationSelector)
+    this.container.classList.remove(this.animationStyles)
     this.#emitEvent("snackclose")
     this.#dehydrateSnackbar()
     this.#unmountSnackbar()
@@ -317,16 +343,8 @@ export default class Snackbar {
       this.hooks = hooks ? Object.assign({}, this.hooks, hooks) : this.hooks
       this.position = position ?? this.position
 
-      // update snackbar root if root is mounted
-      if (this.#reactRoot) {
-        this.#renderSnackbar()
-      } else {
-        console.warn(
-          "Snackbar root was unmounted on close. " +
-          "Cannot update an unmounted root. " +
-          "New states is preserved and will be applied on next render"
-        )
-      }
+      this.#emitEvent("snackupdate")
+
     }
   }
 }
@@ -428,16 +446,6 @@ class SnackPosition {
     this.#alignHorCenter()
   }
 }
-
-
-
-
-
-
-
-
-
-
 
 const action = {
   close: () => { },
