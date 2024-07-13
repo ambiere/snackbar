@@ -3,6 +3,8 @@
   width: fit-content;
   white-space: pre;
   background: transparent;
+  touch-action: pan-y;
+  pointer-events: auto;
 }
 
 .snackbar {
