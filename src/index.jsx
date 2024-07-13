@@ -1,5 +1,3 @@
-//TODO:  custom actions & component
-
 import "./index.css"
 import React from "react"
 import ReactDOM from "react-dom/client"
@@ -42,7 +40,7 @@ export default class Snackbar {
     this.initialStyles = initialStyles
     this.animationStyles = animationStyles
     this.action = Object.assign({}, this.#action(), action)
-    this.ToastComponent = SnackbarComponent
+    this.SnackbarComponent = SnackbarComponent
     this.hooks = hooks
     this.position = position
     this.#timeoutCopy = structuredClone(timeout) // store original timeout
@@ -51,14 +49,12 @@ export default class Snackbar {
 
   #action() {
     return {
-      close: () => {
-        this.#animationEnded = true
-        this.#closeSnack()
+      close: (e, callback) => {
+        callback()
       },
-      escape: (e) => {
+      escape: (e, callback) => {
         if (e.key === "Escape" && this.#animationStarted) {
-          this.#animationEnded = true
-          this.#closeSnack()
+          callback()
         }
       }
     }
@@ -99,16 +95,24 @@ export default class Snackbar {
   }
 
   #renderSnackbar() {
-    const SnackbarComponent = this.#SnackbarComponent
+    const SnackbarComponent = this.#SnackbarComponent()
     this.#reactRoot.render(
-      <SnackbarComponent
-        initialStyles={this.initialStyles ?? ""}
-        startDecorator={this.decorators.startDecorator ?? <></>}
-        endDecorator={this.decorators.endDecorator ?? <></>}
-        closeDecorator={this.decorators.closeDecorator ?? "x"}
-        message={this.#fmtMessage() ?? ""}
-        action={this.action}
-      />
+      this.SnackbarComponent ?
+        <SnackbarComponent
+          message={this.#fmtMessage(this.message) ?? ""}
+          action={this.action}
+          callback={this.#closeSnack.bind(this)}
+        />
+        :
+        <SnackbarComponent
+          initialStyles={this.initialStyles ?? ""}
+          startDecorator={this.decorators.startDecorator ?? <></>}
+          endDecorator={this.decorators.endDecorator ?? <></>}
+          closeDecorator={this.decorators.closeDecorator ?? "x"}
+          message={this.#fmtMessage() ?? ""}
+          action={this.action}
+          callback={this.#closeSnack}
+        />
     )
   }
 
@@ -151,37 +155,40 @@ export default class Snackbar {
     return this.message
   }
 
-  #SnackbarComponent({
-    initialStyles,
-    startDecorator,
-    endDecorator,
-    closeDecorator,
-    message,
-    action
-  }) {
-    return (
-      <div className={`snackbar ${initialStyles}`}>
-        <div className="snackbar-content">
-          <div className="snackbar-startDecorator">
-            {startDecorator}
+  #SnackbarComponent() {
+    if (this.SnackbarComponent) return this.SnackbarComponent
+    return function SnackbarComponent({
+      initialStyles,
+      startDecorator,
+      endDecorator,
+      closeDecorator,
+      message,
+      action,
+      callback
+    }) {
+      return (
+        <div className={`snackbar ${initialStyles}`}>
+          <div className="snackbar-content">
+            <div className="snackbar-startDecorator">
+              {startDecorator}
+            </div>
+            <div><p>{message}</p></div>
+            <div className="snackbar-endDecorator">
+              {endDecorator}
+            </div>
           </div>
-          <div><p>{message}</p></div>
-          <div className="snackbar-endDecorator">
-            {endDecorator}
+          <div className="snackbar-control">
+            <span className="esc">esc</span>
+            <button
+              className="snackbar-close-btn"
+              onClick={(e) => action.close(e, callback)}>
+              {closeDecorator}
+            </button>
           </div>
         </div>
-        <div className="snackbar-control">
-          <span className="esc">esc</span>
-          <button
-            className="snackbar-close-btn"
-            onClick={(e) => action.close(e)}>
-            {closeDecorator}
-          </button>
-        </div>
-      </div>
-    )
+      )
+    }
   }
-
   async toast() {
     const container = await this.#prepareSnackRoot()
     const appended = document.querySelector("#snack-root")
@@ -196,16 +203,20 @@ export default class Snackbar {
       this.#hydrateSnackbar()
       document.body.appendChild(this.root)
       this.#positionSnack()
-      this.container.classList.add(this.animationStyles)
 
-      this.#emitEvent("snackopen")
+      // wait 0.05s for root to be appended, before starting animating
+      // (without it, animation starts before the root has been appended)
+      setTimeout(() => {
+        this.container.classList.add(this.animationStyles)
+        this.#emitEvent("snackopen")
 
-      if (this.autoClose && this.timeout) {
-        this.#scheduleCloseId = this.#scheduleClose()
-        //We track the time elapsed before our snack close
-        this.#scheduleCloseTimer = performance.now()
-        this.#animationFrameRef = requestAnimationFrame(() => this.#trackTime())
-      } else { }
+        if (this.autoClose && this.timeout) {
+          this.#scheduleCloseId = this.#scheduleClose()
+          //We track the time elapsed before our snack close
+          this.#scheduleCloseTimer = performance.now()
+          this.#animationFrameRef = requestAnimationFrame(() => this.#trackTime())
+        } else { }
+      }, 50)
     }
   }
 
@@ -235,7 +246,6 @@ export default class Snackbar {
   #eventListeners = {
     resize: () => this.#positionSnack(),
     snackClose: () => {
-      this.#animationEnded = true
       this.#onSnackClose()
     },
     snackOpen: () => {
@@ -315,19 +325,20 @@ export default class Snackbar {
       this.#snackbarControl = this.root.querySelector(".snackbar-control")
       window.addEventListener("resize", this.#eventListeners.resize)
       this.root.addEventListener("mousemove", this.#eventListeners.mouseMove)
-      this.#snackbarControl.addEventListener("mousemove", this.#eventListeners.mouseMove)
+      // when user provide custom component, snackbar-control is undefined/null
+      this.#snackbarControl && this.#snackbarControl.addEventListener("mousemove", this.#eventListeners.mouseMove)
       this.root.addEventListener("mouseout", this.#eventListeners.mouseOut)
       this.container.addEventListener("snackclose", this.#eventListeners.snackClose)
       this.container.addEventListener("snackopen", this.#eventListeners.snackOpen)
       this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
-      window.addEventListener("keydown", this.action.escape)
+      window.addEventListener("keydown", (e) => this.action.escape(e, this.#closeSnack.bind(this)))
 
 
 
       this.#attachSwipeEvent()
       console.debug("[Snackbar] hydration: successfully hydrated snackbar")
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
     }
   }
 
@@ -340,7 +351,7 @@ export default class Snackbar {
       this.root.addEventListener("pointercancel", this.#eventListeners.pointerCancel)
       console.debug("[Snackbar] event: attached pointer events :/")
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
     }
   }
 
@@ -349,21 +360,23 @@ export default class Snackbar {
     try {
       window.removeEventListener("resize", this.#eventListeners.resize)
       this.root.removeEventListener("mousemove", this.#eventListeners.mouseMove)
-      this.#snackbarControl.removeEventListener("mousemove", this.#eventListeners.mouseMove)
+      // when user provide custom component, snackbar-control is undefined/null
+      this.#snackbarControl && this.#snackbarControl.removeEventListener("mousemove", this.#eventListeners.mouseMove)
       this.root.removeEventListener("mouseout", this.#eventListeners.mouseOut)
       this.container.removeEventListener("snackclose", this.#eventListeners.snackClose)
       this.container.removeEventListener("snackopen", this.#eventListeners.snackOpen)
       this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
-      this.container.removeEventListener("keydown", this.action.escape)
+      this.container.removeEventListener("keydown", (e) => this.action.escape(e, this.#closeSnack.bind(this)))
 
       console.debug("[Snackbar] dehydration: successfully dehydrated snackbar")
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
     }
   }
 
   #closeSnack() {
     this.container.classList.remove(this.animationStyles)
+    this.#animationEnded = true
     this.#emitEvent("snackclose")
     this.#dehydrateSnackbar()
     this.#unmountSnackbar()
@@ -538,7 +551,7 @@ class SnackPosition {
 
   /**
     * Place the snack root bottom-left
-    * */
+   * */
   bottomLeft() {
     this.root.style.left = "0px"
     this.root.style.bottom = "0px"
