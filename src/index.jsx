@@ -49,7 +49,7 @@ export default class Snackbar {
 
   #action() {
     return {
-      close: (e, callback) => {
+      close: (_e, callback) => {
         callback()
       },
       escape: (e, callback) => {
@@ -220,6 +220,12 @@ export default class Snackbar {
     }
   }
 
+  close() {
+    if (this.root) {
+      this.#closeSnack()
+    }
+  }
+
   #emitEvent(type) {
     const event = new Event(type)
     this.container.dispatchEvent(event)
@@ -375,12 +381,17 @@ export default class Snackbar {
   }
 
   #closeSnack() {
-    this.container.classList.remove(this.animationStyles)
-    this.#animationEnded = true
-    this.#emitEvent("snackclose")
-    this.#dehydrateSnackbar()
-    this.#unmountSnackbar()
-    this.timeout = this.#timeoutCopy //restore timeout
+    try {
+      this.container.classList.remove(this.animationStyles)
+      this.#animationEnded = true
+      this.#emitEvent("snackclose")
+      this.#dehydrateSnackbar()
+      this.#unmountSnackbar()
+      this.timeout = this.#timeoutCopy //restore timeout
+
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   #pauseSnack() {
