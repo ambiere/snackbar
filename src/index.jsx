@@ -1,3 +1,5 @@
+//TODO:  custom actions & component
+
 import "./index.css"
 import React from "react"
 import ReactDOM from "react-dom/client"
@@ -14,6 +16,9 @@ export default class Snackbar {
   #timeoutCopy
   #isOnSnackbarControl
   #snackbarControl
+  #swipeStartX
+  #swipeStartY
+  #isSwipping
 
   constructor({
     message,
@@ -253,11 +258,50 @@ export default class Snackbar {
     mouseOut: (e) => {
       const isSnackRoot = e.target.closest("#snack-root")
       isSnackRoot && !this.#isOnSnackbarControl && this.#resumeSnack()
+    },
+    pointerDown: (e) => {
+      this.#swipeStartX = e.clientX
+      this.#swipeStartY = e.clientY
+      this.#isSwipping = true
+      this.root.setPointerCapture(e.pointerId)
+    },
+    pointerMove: (e) => {
+      if (this.#isSwipping) {
+        const deltaX = e.clientX - this.#swipeStartX
+        const deltaY = e.clientY - this.#swipeStartY
+
+        this.#snackPosition.transform(deltaX, deltaY)
+      }
+    },
+    pointerUp: (e) => {
+      if (this.#isSwipping) {
+        this.#isSwipping = false
+        this.root.releasePointerCapture(e.pointerId)
+
+        const deltaX = e.clientX - this.#swipeStartX
+        const deltaY = e.clientY - this.#swipeStartY
+
+        const swipeThreshold = 150
+
+        if (Math.abs(deltaY) > swipeThreshold || Math.abs(deltaX) > swipeThreshold) {
+          const _deltaX = deltaX > 0 ? 1000 : -1000
+          const _deltaY = deltaY > 0 ? 1000 : -1000
+          this.#snackPosition.transform(_deltaX, _deltaY)
+          this.#closeSnack()
+          return
+        }
+
+        this.#snackPosition.transform(0, 0)
+      }
+    },
+    pointerCancel: () => {
+      this.#isSwipping = false
+      this.#snackPosition.transform(0, 0)
     }
   }
 
   #hydrateSnackbar() {
-    console.debug("[hydration]: hydrating snackbar...")
+    console.debug("[Snackbar] hydration: hydrating snackbar...")
     try {
       this.#snackbarControl = this.root.querySelector(".snackbar-control")
       window.addEventListener("resize", this.#eventListeners.resize)
@@ -269,14 +313,30 @@ export default class Snackbar {
       this.container.addEventListener("snackupdate", this.#eventListeners.snackUpdate)
       window.addEventListener("keydown", this.action.escape)
 
-      console.debug("[hydration]: successfully hydrated snackbar")
+
+
+      this.#attachSwipeEvent()
+      console.debug("[Snackbar] hydration: successfully hydrated snackbar")
+    } catch (error) {
+      console.error(error.message)
+    }
+  }
+
+  #attachSwipeEvent() {
+    console.debug("[Snackbar] event: attaching pointer events...")
+    try {
+      this.root.addEventListener("pointerdown", this.#eventListeners.pointerDown)
+      this.root.addEventListener("pointermove", this.#eventListeners.pointerMove)
+      this.root.addEventListener("pointerup", this.#eventListeners.pointerUp)
+      this.root.addEventListener("pointercancel", this.#eventListeners.pointerCancel)
+      console.debug("[Snackbar] event: attached pointer events :/")
     } catch (error) {
       console.error(error.message)
     }
   }
 
   #dehydrateSnackbar() {
-    console.debug("[dehydration]: dehydrating snackbar...")
+    console.debug("[Snackbar] dehydration: dehydrating snackbar...")
     try {
       window.removeEventListener("resize", this.#eventListeners.resize)
       this.root.removeEventListener("mousemove", this.#eventListeners.mouseMove)
@@ -287,7 +347,7 @@ export default class Snackbar {
       this.container.removeEventListener("snackupdate", this.#eventListeners.snackUpdate)
       this.container.removeEventListener("keydown", this.action.escape)
 
-      console.debug("[dehydration]: successfully dehydrated snackbar")
+      console.debug("[Snackbar] dehydration: successfully dehydrated snackbar")
     } catch (error) {
       console.error(error.message)
     }
@@ -382,7 +442,6 @@ export default class Snackbar {
       this.position = position ?? this.position
 
       this.#emitEvent("snackupdate")
-
     }
   }
 }
@@ -446,7 +505,7 @@ class SnackPosition {
 
   /**
     * Place the snack root right-center
-    * */
+  * */
   rightCenter() {
     this.root.style.right = "0px"
     this.#alignVerCenter()
@@ -454,7 +513,7 @@ class SnackPosition {
 
   /**
     * Place the snack root left-center
-    * */
+  * */
   leftCenter() {
     this.root.style.left = "0px"
     this.#alignVerCenter()
@@ -462,7 +521,7 @@ class SnackPosition {
 
   /**
     * Place the snack root bottom-right
-    * */
+  * */
   bottomRight() {
     this.root.style.right = "0px"
     this.root.style.bottom = "0px"
@@ -478,92 +537,18 @@ class SnackPosition {
 
   /**
     * Place the snack root bottom-center
-    * */
+  * */
   bottomCenter() {
     this.root.style.bottom = "0px"
     this.#alignHorCenter()
   }
+
+  /**
+    * Transform snackbar root based on pointer move
+    * */
+  transform(x, y) {
+    this.root.style.transition = "transform 0.3s ease-in-out"
+    this.root.style.transform = `translate(${x}px, ${y}px)`
+  }
 }
 
-const action = {
-  close: () => { },
-  escape: () => { },
-  swipe: () => { },
-  hover: () => { }
-}
-
-
-
-
-
-
-
-
-
-
-
-// class ReactNotification {
-//   constructor({
-//     message,
-//     timeout = 2500,
-//     root = 'notification',
-//     animation = 'animation',
-//     formatter = (message) => message
-//   }) {
-//     this.root = root
-//     this.message = message
-//     this.timeout = timeout
-//     this.animation = animation
-//     this.formatter = formatter
-//     this.rootWrapper = document.querySelector('.notification')
-//   }
-//
-//   populateRoot() {
-//     let root = this.rootWrapper
-//     if (this.root !== 'notification') {
-//       root = document.querySelector(`.${this.root}`)
-//     }
-//     root.innerHTML = this.formatter(this.message)
-//     return {
-//       depopulate: () => {
-//         root.innerHTML = ''
-//       }
-//     }
-//   }
-//
-//   #polyfillWithResolvers() {
-//     Promise.withResolvers = () => {
-//       let _resolve, _reject
-//       const promise = new Promise((resolve, reject) => {
-//         _resolve = resolve
-//         _reject = reject
-//       })
-//       return {
-//         promise,
-//         resolve: _resolve,
-//         reject: _reject
-//       }
-//     }
-//   }
-//
-//   async notify(cb = () => { }) {
-//     this.#polyfillWithResolvers()
-//     const root = this.populateRoot()
-//     this.rootWrapper.classList.add(this.animation)
-//     const { promise, resolve, reject } = Promise.withResolvers()
-//
-//     setTimeout(() => {
-//       this.rootWrapper.classList.remove(this.animation)
-//       root.depopulate()
-//       if (typeof cb === 'function') {
-//         resolve(cb())
-//       } else {
-//         reject(new Error('Error: Callback should be a function'))
-//       }
-//     }, this.timeout)
-//
-//     return promise
-//   }
-// }
-//
-// export default ReactNotification
