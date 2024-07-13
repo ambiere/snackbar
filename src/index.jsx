@@ -31,7 +31,8 @@ export default class Snackbar {
     action,
     SnackbarComponent,
     hooks = {},
-    position
+    position,
+    swipeThreshold = 150,
   }) {
     this.message = message
     this.decorators = decorators
@@ -45,6 +46,7 @@ export default class Snackbar {
     this.hooks = hooks
     this.position = position
     this.#timeoutCopy = structuredClone(timeout) // store original timeout
+    this.swipeThreshold = swipeThreshold
   }
 
   #action() {
@@ -269,8 +271,11 @@ export default class Snackbar {
       if (this.#isSwipping) {
         const deltaX = e.clientX - this.#swipeStartX
         const deltaY = e.clientY - this.#swipeStartY
+        const parcentMovedX = Math.abs(deltaX) / this.swipeThreshold
+        const parcentMovedY = Math.abs(deltaY) / this.swipeThreshold
 
         this.#snackPosition.transform(deltaX, deltaY)
+        this.#fadeSnackOnSwipe(parcentMovedX, parcentMovedY)
       }
     },
     pointerUp: (e) => {
@@ -278,26 +283,30 @@ export default class Snackbar {
         this.#isSwipping = false
         this.root.releasePointerCapture(e.pointerId)
 
-        const deltaX = e.clientX - this.#swipeStartX
-        const deltaY = e.clientY - this.#swipeStartY
+        let deltaX = e.clientX - this.#swipeStartX
+        let deltaY = e.clientY - this.#swipeStartY
 
-        const swipeThreshold = 150
-
-        if (Math.abs(deltaY) > swipeThreshold || Math.abs(deltaX) > swipeThreshold) {
-          const _deltaX = deltaX > 0 ? 1000 : -1000
-          const _deltaY = deltaY > 0 ? 1000 : -1000
-          this.#snackPosition.transform(_deltaX, _deltaY)
+        if (Math.abs(deltaY) > this.swipeThreshold || Math.abs(deltaX) > this.swipeThreshold) {
+          deltaX = deltaX > 0 ? 1000 : -1000
+          deltaY = deltaY > 0 ? 1000 : -1000
+          this.#snackPosition.transform(deltaX, deltaY)
           this.#closeSnack()
           return
         }
 
         this.#snackPosition.transform(0, 0)
+        this.#fadeSnackOnSwipe(0, 0)
       }
     },
     pointerCancel: () => {
       this.#isSwipping = false
       this.#snackPosition.transform(0, 0)
     }
+  }
+
+  #fadeSnackOnSwipe(x, y) {
+    if (x >= y) return this.root.style.opacity = 1 - x
+    if (x <= y) return this.root.style.opacity = 1 - y
   }
 
   #hydrateSnackbar() {
@@ -547,7 +556,7 @@ class SnackPosition {
     * Transform snackbar root based on pointer move
     * */
   transform(x, y) {
-    this.root.style.transition = "transform 0.3s ease-in-out"
+    // this.root.style.transition = "transform 0.3s ease-in-out"
     this.root.style.transform = `translate(${x}px, ${y}px)`
   }
 }
