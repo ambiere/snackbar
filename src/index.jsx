@@ -111,7 +111,7 @@ export default class Snackbar {
           closeDecorator={this.decorators.closeDecorator ?? "x"}
           message={this.#fmtMessage() ?? ""}
           action={this.action}
-          callback={this.#closeSnack}
+          callback={this.#closeSnack.bind(this)}
         />
     )
   }
